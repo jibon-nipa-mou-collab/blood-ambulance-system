@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Driver Profile</title>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Bengali:wght@400;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root{--muted:#9aa6b2}
+    *{box-sizing:border-box}
+  html,body{height:100%;margin:0;font-family:"Noto Sans Bengali",system-ui, -apple-system, Segoe UI, Roboto, Arial,sans-serif;color:#e6eef8}
+  .animated-bg{ position:fixed; inset:0; z-index:-2; background:linear-gradient(270deg,#ff4d4d,#22c55e,#3b82f6); background-size:600% 600%; animation:rgbShift 10s ease infinite }
+  @keyframes rgbShift{ 0%{background-position:0% 50%} 50%{background-position:100% 50%} 100%{background-position:0% 50%} }
+  #leaf-container{ position:fixed; inset:0; pointer-events:none; z-index:-1; overflow:hidden }
+    .wrap{min-height:100vh;display:flex;align-items:flex-start;justify-content:center;padding:48px 16px}
+  .card{width:100%;max-width:880px;background:rgba(0,0,0,0.6);border-radius:12px;padding:28px;border:1px solid rgba(255,255,255,0.04);backdrop-filter:blur(6px)}
+    .row{display:flex;gap:20px;align-items:center}
+    .avatar{width:110px;height:110px;border-radius:999px;background:linear-gradient(135deg,#60a5fa,#22c55e);display:flex;align-items:center;justify-content:center;font-size:36px;color:white;overflow:hidden}
+    .meta{flex:1}
+    .name{font-size:20px;margin:0}
+    .meta .muted{color:var(--muted);margin-top:6px}
+    .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;margin-top:18px}
+    .item{background:rgba(255,255,255,0.02);padding:12px;border-radius:8px}
+    .label{font-size:12px;color:var(--muted)}
+    .value{font-weight:700;margin-top:6px}
+    .actions{margin-top:18px;display:flex;gap:12px}
+    .btn{padding:10px 14px;border-radius:10px;border:0;cursor:pointer}
+    .btn.edit{background:#2563eb;color:white}
+    .btn.logout{background:transparent;color:#e6eef8;border:1px solid rgba(255,255,255,0.06)}
+  </style>
+</head>
+<body>
+  <div class="animated-bg" aria-hidden="true"></div>
+  <div id="leaf-container" aria-hidden="true"></div>
+  <main class="wrap">
+    <section class="card">
+      <div class="row">
+        <div class="avatar" id="avatar">D</div>
+        <div class="meta">
+          <h1 class="name" id="name">--</h1>
+          <div class="muted" id="mobile">--</div>
+          <div class="actions">
+            <button class="btn edit" id="editBtn">Edit Profile</button>
+            <button class="btn logout" id="logoutBtn">Logout</button>
+            <div id="loading" style="display:none;margin-left:8px">Loading...</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="grid" id="info">
+        <div class="item"><div class="label">Address</div><div class="value" id="address">--</div></div>
+        <div class="item"><div class="label">Vehicle Type</div><div class="value" id="vehicle">--</div></div>
+        <div class="item"><div class="label">Service Area</div><div class="value" id="area">--</div></div>
+        <div class="item"><div class="label">Experience (years)</div><div class="value" id="experience">--</div></div>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const loadingEl = document.getElementById('loading');
+    function showLoading(v){ loadingEl.style.display = v ? 'inline-block' : 'none' }
+
+    const fallback = { name:'Md. Driver', mobile:'+880******', address:'City', vehicle:'AC/Non-AC', area:null, experience:null, avatarUrl:null }
+
+    async function load(){
+      showLoading(true);
+      try{
+        const res = await fetch('/api/driver-profile', { credentials:'include' });
+        if(!res.ok) throw new Error('no');
+        const data = await res.json();
+        render(data);
+      }catch(e){
+        console.warn('driver profile load failed',e);
+        render(fallback);
+      }finally{ showLoading(false); }
+    }
+
+    function render(d){
+      document.getElementById('name').textContent = d.name || '--';
+      document.getElementById('mobile').textContent = d.mobile || '--';
+      document.getElementById('address').textContent = d.address || '--';
+      document.getElementById('vehicle').textContent = d.vehicle || '--';
+      document.getElementById('area').textContent = d.area || '--';
+      document.getElementById('experience').textContent = (d.experience||'--');
+      const av = document.getElementById('avatar');
+      if(d.avatarUrl){ av.innerHTML = ''; const img=document.createElement('img'); img.src=d.avatarUrl; img.alt=d.name||'Driver'; img.style.width='100%'; img.style.height='100%'; img.style.objectFit='cover'; av.appendChild(img); } else { av.textContent = (d.name||'--').split(' ').map(s=>s[0]).slice(0,2).join('').toUpperCase(); }
+    }
+
+    document.getElementById('logoutBtn').addEventListener('click', ()=>{ fetch('/api/logout',{method:'POST',credentials:'include'}).catch(()=>{}).finally(()=>window.location.href='home page.html'); });
+    document.getElementById('editBtn').addEventListener('click', ()=>{ window.location.href='driver_profile_edit.html'; });
+
+    load();
+  </script>
+  <script>
+    (function(){
+      const leafContainer = document.getElementById('leaf-container');
+      const svg = `<svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M24 4C18 16 4 20 4 32C4 40 16 44 24 44C32 44 44 40 44 32C44 20 30 16 24 4Z" fill="#f59e0b" stroke="#b45309" stroke-width="1.2"/><path d="M24 44C24 32 24 20 24 4" stroke="#b45309" stroke-width="0.9" stroke-linecap="round"/></svg>`;
+      function rand(a,b){return Math.random()*(b-a)+a}
+      for(let i=0;i<10;i++){
+        const el = document.createElement('div');
+        el.style.position='absolute';
+        el.style.left = rand(0,95)+'vw';
+        el.style.top = rand(-25, -5)+'vh';
+        const size = rand(28,64);
+        el.style.width = size+'px'; el.style.height = size+'px';
+        el.style.opacity = String(rand(0.8,1));
+        el.style.transform = `rotate(${rand(-30,30)}deg)`;
+        el.innerHTML = svg;
+        const dur = rand(6,12);
+        el.style.transition = `top ${dur}s linear, left ${dur}s ease-in-out, transform ${dur}s linear, opacity ${dur}s linear`;
+        setTimeout(()=>{
+          el.style.top = '110vh';
+          el.style.left = rand(-10,105)+'vw';
+          el.style.transform = `rotate(${rand(90,720)}deg) scale(${rand(0.7,1.2)})`;
+          el.style.opacity = '0';
+        }, rand(100,1200));
+        // loop
+        setInterval(()=>{
+          el.style.transition = 'none';
+          el.style.top = rand(-30,-5)+'vh';
+          el.style.left = rand(0,95)+'vw';
+          el.style.opacity = String(rand(0.8,1));
+          el.style.transform = `rotate(${rand(-30,30)}deg)`;
+          void el.offsetWidth;
+          el.style.transition = `top ${dur}s linear, left ${dur}s ease-in-out, transform ${dur}s linear, opacity ${dur}s linear`;
+          setTimeout(()=>{
+            el.style.top = '110vh';
+            el.style.left = rand(-10,105)+'vw';
+            el.style.transform = `rotate(${rand(90,720)}deg) scale(${rand(0.7,1.2)})`;
+            el.style.opacity = '0';
+          },50);
+        }, (dur+rand(2,6))*1000);
+        leafContainer.appendChild(el);
+      }
+    })();
+  </script>
+</body>
+</html>

@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Donor Login</title>
+  <style>
+    body{
+      font-family: Arial, sans-serif;
+      display:flex;
+      justify-content:center;
+      align-items:center;
+      height:100vh;
+      color:white;
+      overflow:hidden;
+    }
+    .animated-bg{ position:fixed; inset:0; z-index:-2; background:linear-gradient(270deg,#ff4d4d,#22c55e,#3b82f6); background-size:600% 600%; animation:rgbShift 10s ease infinite }
+    @keyframes rgbShift{ 0%{background-position:0% 50%} 50%{background-position:100% 50%} 100%{background-position:0% 50%} }
+    #leaf-container{ position:fixed; inset:0; pointer-events:none; z-index:-1; overflow:hidden }
+    .login-card{
+      background: rgba(0,0,0,0.55);
+      padding: 30px 35px;
+      border-radius: 15px;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+      width:100%;
+      max-width:400px;
+      text-align:center;
+    }
+    h2{
+      margin-bottom:25px;
+    }
+    input{
+      width:100%;
+      padding:12px;
+      margin:10px 0;
+      border-radius:8px;
+      border:none;
+      font-size:16px;
+    }
+    button{
+      width:100%;
+      padding:14px;
+      margin-top:15px;
+      background-color:#dc2626;
+      border:none;
+      border-radius:8px;
+      font-size:18px;
+      font-weight:bold;
+      color:white;
+      cursor:pointer;
+      transition:0.3s;
+    }
+    button:hover{
+      background-color:#b91c1c;
+    }
+    a{
+      display:block;
+      margin-top:15px;
+      color:#facc15;
+      text-decoration:none;
+    }
+    a:hover{
+      text-decoration:underline;
+    }
+  </style>
+</head>
+<body>
+  <div class="animated-bg" aria-hidden="true"></div>
+  <div id="leaf-container" aria-hidden="true"></div>
+  <div class="login-card">
+    <h2>Donor Account Login</h2>
+    <form id="loginForm" action="donor_dashboard.html" method="POST">
+      <input type="email" name="email" placeholder="email" required>
+      <input type="password" name="password" placeholder="Password" required>
+      <button type="submit">Login</button>
+    </form>
+    <a href="#">Forget Password?</a>
+  </div>
+  <script>
+    (function(){
+      const leafContainer = document.getElementById('leaf-container');
+      const svg = `<svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M24 4C18 16 4 20 4 32C4 40 16 44 24 44C32 44 44 40 44 32C44 20 30 16 24 4Z" fill="#f59e0b" stroke="#b45309" stroke-width="1.2"/><path d="M24 44C24 32 24 20 24 4" stroke="#b45309" stroke-width="0.9" stroke-linecap="round"/></svg>`;
+      function rand(a,b){return Math.random()*(b-a)+a}
+      for(let i=0;i<10;i++){
+        const el = document.createElement('div');
+        el.style.position='absolute';
+        el.style.left = rand(0,95)+'vw';
+        el.style.top = rand(-25, -5)+'vh';
+        const size = rand(28,64);
+        el.style.width = size+'px'; el.style.height = size+'px';
+        el.style.opacity = String(rand(0.8,1));
+        el.style.transform = `rotate(${rand(-30,30)}deg)`;
+        el.innerHTML = svg;
+        const dur = rand(6,12);
+        el.style.transition = `top ${dur}s linear, left ${dur}s ease-in-out, transform ${dur}s linear, opacity ${dur}s linear`;
+        setTimeout(()=>{
+          el.style.top = '110vh';
+          el.style.left = rand(-10,105)+'vw';
+          el.style.transform = `rotate(${rand(90,720)}deg) scale(${rand(0.7,1.2)})`;
+          el.style.opacity = '0';
+        }, rand(100,1200));
+        // loop
+        setInterval(()=>{
+          el.style.transition = 'none';
+          el.style.top = rand(-30,-5)+'vh';
+          el.style.left = rand(0,95)+'vw';
+          el.style.opacity = String(rand(0.8,1));
+          el.style.transform = `rotate(${rand(-30,30)}deg)`;
+          void el.offsetWidth;
+          el.style.transition = `top ${dur}s linear, left ${dur}s ease-in-out, transform ${dur}s linear, opacity ${dur}s linear`;
+          setTimeout(()=>{
+            el.style.top = '110vh';
+            el.style.left = rand(-10,105)+'vw';
+            el.style.transform = `rotate(${rand(90,720)}deg) scale(${rand(0.7,1.2)})`;
+            el.style.opacity = '0';
+          },50);
+        }, (dur+rand(2,6))*1000);
+        leafContainer.appendChild(el);
+      }
+    })();
+    // Make login redirect reliably to donor_dashboard when clicked (useful without backend)
+    document.getElementById('loginForm').addEventListener('submit', function(e){
+      // Prevent actual form POST in this static demo and redirect
+      e.preventDefault();
+      window.location.href = 'donor_dashboard.html';
+    });
+  </script>
+</body>
+</html>
