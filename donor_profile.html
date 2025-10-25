@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Donor Profile</title>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Bengali:wght@400;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root{ --bg: #0f172a; --card:#0b1220; --muted: #94a3b8; --accent:#16a34a; }
+    *{box-sizing:border-box}
+    html,body{height:100%; margin:0; font-family: "Noto Sans Bengali", system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; color:#e6eef8}
+    /* animated red/green/blue gradient */
+    .animated-bg{
+      position:fixed; inset:0; z-index:-2; background:linear-gradient(270deg, #ff4d4d, #22c55e, #3b82f6); background-size: 600% 600%; animation: rgbShift 10s ease infinite;
+    }
+    @keyframes rgbShift{
+      0%{background-position:0% 50%}
+      50%{background-position:100% 50%}
+      100%{background-position:0% 50%}
+    }
+    /* leaf container sits behind the card but above the animated-bg */
+    #leaf-container{position:fixed; inset:0; pointer-events:none; z-index:-1; overflow:hidden}
+    .container{min-height:100vh; display:flex; align-items:flex-start; justify-content:center; padding:48px 16px}
+    /* floating panel: semi-transparent black with frosted blur */
+    .card{width:100%; max-width:880px; background: rgba(0,0,0,0.65); color: #e6eef8; border:1px solid rgba(255,255,255,0.06); border-radius:12px; padding:28px; box-shadow:0 12px 40px rgba(2,6,23,0.25); backdrop-filter: blur(8px)}
+    .profile-row{display:flex; gap:24px; align-items:center}
+    .avatar{
+      width:120px; height:120px; border-radius:999px; background:linear-gradient(135deg,#60a5fa,#22c55e); display:flex; align-items:center; justify-content:center; font-size:42px; color:white; flex-shrink:0; overflow:hidden; border:3px solid rgba(2,6,23,0.06)
+    }
+    .avatar img{width:100%; height:100%; object-fit:cover; display:block}
+    .meta{flex:1}
+    .name{font-size:20px; font-weight:700; margin:0}
+    .role{color:var(--muted); margin-top:6px}
+    .info{margin-top:18px; display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:12px}
+    .info .item{background:rgba(255,255,255,0.03); padding:12px 14px; border-radius:8px; border:1px solid rgba(255,255,255,0.04)}
+    .label{font-size:12px; color:#cbd5e1; margin-bottom:6px}
+    .value{font-weight:600; color:#e6eef8}
+    .actions{display:flex; gap:12px; margin-top:18px}
+    .btn{padding:10px 14px; border-radius:10px; cursor:pointer; border:0; font-weight:700}
+    .btn.edit{background:#2563eb; color:white; border:1px solid rgba(37,99,235,0.12)}
+    .btn.logout{background:transparent; color:#e6eef8; border:1px solid rgba(255,255,255,0.08)}
+    .spinner{width:20px; height:20px; border-radius:50%; border:3px solid rgba(255,255,255,0.08); border-top-color:rgba(255,255,255,0.5); animation:spin 1s linear infinite; display:inline-block}
+    @keyframes spin{to{transform:rotate(360deg)}}
+    .hint{color:var(--muted); font-size:13px; margin-top:12px}
+    .availability{display:flex; align-items:center; gap:8px; margin-top:8px;}
+    .availability-toggle{background:#16a34a; color:white; border:none; padding:6px 12px; border-radius:6px; cursor:pointer; font-size:12px;}
+    .availability-toggle.unavailable{background:#ef4444;}
+    @media (max-width:560px){ .profile-row{flex-direction:column; align-items:center} .meta{text-align:center} .actions{justify-content:center} }
+    .success-message{background:#16a34a; color:white; padding:10px; border-radius:6px; margin-bottom:15px; text-align:center;}
+    .error-message{background:#ef4444; color:white; padding:10px; border-radius:6px; margin-bottom:15px; text-align:center;}
+  </style>
+</head>
+<body>
+  <div class="animated-bg" aria-hidden="true"></div>
+  <div id="leaf-container" aria-hidden="true"></div>
+  <main class="container">
+    <section class="card" aria-labelledby="profileTitle">
+      <header class="profile-row">
+        <div class="avatar" id="avatar">
+          <span id="avatarInitials">U</span>
+        </div>
+        <div class="meta">
+          <h1 id="profileTitle" class="name">--</h1>
+          <div class="role" id="role">Blood Donor</div>
+          <div class="availability">
+            <span>Availability: </span>
+            <button class="availability-toggle" id="availabilityToggle">Available</button>
+          </div>
+          <div class="actions">
+            <button class="btn edit" id="editBtn">Edit Profile</button>
+            <button class="btn logout" id="logoutBtn">Logout</button>
+            <div id="loading" style="display:none;margin-left:8px" aria-hidden="true">
+              <span class="spinner" aria-hidden="true"></span>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <div id="message"></div>
+
+      <div class="info" id="info">
+        <div class="item">
+          <div class="label">Email</div>
+          <div class="value" id="email">--</div>
+        </div>
+        <div class="item">
+          <div class="label">Phone</div>
+          <div class="value" id="phone">--</div>
+        </div>
+        <div class="item">
+          <div class="label">Blood Group</div>
+          <div class="value" id="bloodGroup">--</div>
+        </div>
+        <div class="item">
+          <div class="label">Health Condition</div>
+          <div class="value" id="healthCondition">None</div>
+        </div>
+        <div class="item">
+          <div class="label">Donations Count</div>
+          <div class="value" id="donationCount">--</div>
+        </div>
+        <div class="item" style="grid-column:1/-1">
+          <div class="label">Address</div>
+          <div class="value" id="address">--</div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script type="module">
+    import { onAuthChanged, getUserProfile, logoutUser, updateAvailability, auth } from './firebase.js';
+
+    // Create 10 falling leaves in the #leaf-container
+    (function(){
+      const leafContainer = document.getElementById('leaf-container');
+      const leafSVG = `<svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M24 4C18 16 4 20 4 32C4 40 16 44 24 44C32 44 44 40 44 32C44 20 30 16 24 4Z" fill="#f97316" stroke="#b45309" stroke-width="1.5"/><path d="M24 44C24 32 24 20 24 4" stroke="#b45309" stroke-width="1" stroke-linecap="round"/></svg>`;
+      function rand(a,b){return Math.random()*(b-a)+a}
+      for(let i=0;i<10;i++){
+        const wrapper = document.createElement('div');
+        wrapper.style.position='absolute';
+        wrapper.style.left = rand(0,95)+'vw';
+        wrapper.style.top = rand(-20, -5)+'vh';
+        const size = rand(28,64);
+        wrapper.style.width = size+'px';
+        wrapper.style.height = size+'px';
+        wrapper.style.transform = `rotate(${rand(-30,30)}deg)`;
+        wrapper.style.opacity = String(rand(0.8,1));
+        wrapper.innerHTML = leafSVG;
+        // animation
+        const dur = rand(5,12);
+        wrapper.style.transition = `transform ${dur}s linear, top ${dur}s linear, left ${dur}s ease-in-out, opacity ${dur}s linear`;
+        // start movement slightly delayed
+        (function(w,d){
+          setTimeout(()=>{
+            w.style.top = '110vh';
+            w.style.left = rand(-10,105)+'vw';
+            w.style.transform = `rotate(${rand(90,720)}deg) scale(${rand(0.7,1.2)})`;
+            w.style.opacity = '0';
+          }, rand(100, 1200));
+          // loop: when finished, reset and animate again
+          setInterval(()=>{
+            w.style.transition = 'none';
+            w.style.top = rand(-30,-5)+'vh';
+            w.style.left = rand(0,95)+'vw';
+            w.style.opacity = String(rand(0.8,1));
+            w.style.transform = `rotate(${rand(-30,30)}deg)`;
+            // force reflow then animate
+            void w.offsetWidth;
+            w.style.transition = `transform ${d}s linear, top ${d}s linear, left ${d}s ease-in-out, opacity ${d}s linear`;
+            setTimeout(()=>{
+              w.style.top = '110vh';
+              w.style.left = rand(-10,105)+'vw';
+              w.style.transform = `rotate(${rand(90,720)}deg) scale(${rand(0.7,1.2)})`;
+              w.style.opacity = '0';
+            }, 50);
+          }, (dur+rand(2,6))*1000);
+        })(wrapper,dur);
+        leafContainer.appendChild(wrapper);
+      }
+    })();
+
+    const loadingEl = document.getElementById('loading');
+    const messageEl = document.getElementById('message');
+    let currentUser = null;
+    let currentProfile = null;
+
+    function showLoading(show){ 
+      loadingEl.style.display = show ? 'inline-block' : 'none'; 
+    }
+
+    function showMessage(message, type = 'success') {
+      messageEl.innerHTML = `<div class="${type === 'success' ? 'success-message' : 'error-message'}">${message}</div>`;
+      setTimeout(() => {
+        messageEl.innerHTML = '';
+      }, 5000);
+    }
+
+    // Load profile data
+    async function loadProfile(){
+      showLoading(true);
+      try {
+        const user = auth.currentUser;
+        if (!user) {
+          window.location.href = 'donor_login.html';
+          return;
+        }
+
+        currentUser = user;
+        const profile = await getUserProfile(user.uid);
+        
+        if (profile) {
+          currentProfile = profile;
+          renderProfile(profile);
+        } else {
+          showMessage('Profile not found. Please complete your registration.', 'error');
+        }
+      } catch (error) {
+        console.error('Error loading profile:', error);
+        showMessage('Error loading profile. Please try again.', 'error');
+      } finally {
+        showLoading(false);
+      }
+    }
+
+    function renderProfile(profile){
+      const { fullName, email, mobile, address, bloodGroup, healthCondition, donationCount, available, role } = profile;
+      
+      document.getElementById('profileTitle').textContent = fullName || '--';
+      document.getElementById('role').textContent = role === 'driver' ? 'Ambulance Driver' : 'Blood Donor';
+      document.getElementById('email').textContent = email || '--';
+      document.getElementById('phone').textContent = mobile || '--';
+      document.getElementById('address').textContent = address || '--';
+      document.getElementById('bloodGroup').textContent = bloodGroup || '--';
+      document.getElementById('healthCondition').textContent = healthCondition || 'None';
+      document.getElementById('donationCount').textContent = donationCount || '0';
+
+      // Set avatar initials
+      const initials = (fullName || 'U').split(' ').filter(Boolean).slice(0,2).map(n=>n[0].toUpperCase()).join('') || 'U';
+      document.getElementById('avatarInitials').textContent = initials;
+
+      // Set availability toggle
+      const availabilityToggle = document.getElementById('availabilityToggle');
+      availabilityToggle.textContent = available ? 'Available' : 'Unavailable';
+      availabilityToggle.className = available ? 'availability-toggle' : 'availability-toggle unavailable';
+    }
+
+    // Availability toggle
+    document.getElementById('availabilityToggle').addEventListener('click', async () => {
+      if (!currentUser || !currentProfile) return;
+      
+      try {
+        showLoading(true);
+        const newAvailability = !currentProfile.available;
+        
+        await updateAvailability(currentUser.uid, newAvailability, currentProfile.role);
+        
+        currentProfile.available = newAvailability;
+        renderProfile(currentProfile);
+        showMessage(`Availability updated to ${newAvailability ? 'Available' : 'Unavailable'}`);
+      } catch (error) {
+        console.error('Error updating availability:', error);
+        showMessage('Error updating availability', 'error');
+      } finally {
+        showLoading(false);
+      }
+    });
+
+    // Buttons
+    document.getElementById('logoutBtn').addEventListener('click', async () => {
+      await logoutUser();
+    });
+
+    document.getElementById('editBtn').addEventListener('click', () => {
+      window.location.href = 'donor_profile_edit.html';
+    });
+
+    // Check auth state and load profile
+    onAuthChanged((user) => {
+      if (user) {
+        loadProfile();
+      } else {
+        window.location.href = 'donor_login.html';
+      }
+    });
+  </script>
+</body>
+</html>
